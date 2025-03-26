@@ -2,75 +2,84 @@ pipeline {
     agent any
 
     tools {
-        maven 'Apache Maven 3.8.7' // Ensure this name matches Jenkins Maven configuration
+        maven 'Apache Maven 3.8.7' // Ensure this matches Jenkins Maven configuration
+    }
+
+    environment {
+        DOCKER_IMAGE = 'pradeep781/bankingproject:latest'
     }
 
     stages {
-        stage('Checkout the Code from GitHub') {
+        stage('Checkout Code') {
             steps {
+                echo 'Cloning repository from GitHub...'
                 git url: 'https://github.com/Pradeep-kumar11/banking_finance'
-                echo 'GitHub repository checked out'
             }
         }
 
-        stage('Code Compile with pradeep') {
+        stage('Compile Code') {
             steps {
-                echo 'Starting code compilation'
+                echo 'Compiling code...'
                 sh 'mvn compile'
             }
         }
 
-        stage('Code Testing with pradeep') {
+        stage('Run Tests') {
             steps {
-                echo 'Running unit tests'
+                echo 'Running unit tests...'
                 sh 'mvn test'
             }
         }
 
-        stage('QA with pradeep') {
+        stage('Code Quality Check') {
             steps {
-                echo 'Running code quality checks'
+                echo 'Running code quality checks...'
                 sh 'mvn checkstyle:checkstyle'
             }
         }
 
-        stage('Package with pradeep') {
+        stage('Package Application') {
             steps {
-                echo 'Packaging application'
+                echo 'Packaging application...'
                 sh 'mvn clean package'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                echo 'Building Docker image'
-                sh 'docker build -t pradeep781/bankingproject:latest .'
+                echo 'Building Docker image...'
+                sh "docker build -t $DOCKER_IMAGE ."
             }
         }
 
-        stage('Docker Login Credentials') {
-    steps {
-        echo 'Logging into DockerHub'
-        withCredentials([
-            string(credentialsId: 'dockerhubusername', variable: 'DOCKER_USER'),
-            string(credentialsId: 'dockerhubpassword', variable: 'DOCKER_PASS')
-        ]) {
-            sh "docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}"
-        }
-    }
-}
-
-        stage('Image Push to DockerHub') {
+        stage('Docker Login') {
             steps {
-                echo 'Pushing Docker image to DockerHub'
-                sh 'docker push pradeep781/bankingproject:latest'
+                echo 'Logging into DockerHub...'
+                withCredentials([
+                    string(credentialsId: 'dockerhubusername', variable: 'DOCKER_USER'),
+                    string(credentialsId: 'dockerhubpassword', variable: 'DOCKER_PASS')
+                ]) {
+                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                }
             }
         }
 
-        stage('Deploy Application using Ansible') {
+        stage('Push Image to DockerHub') {
             steps {
-                echo 'Deploying application using Ansible playbook'
-                ansiblePlaybook become: true, credentialsId: 'ansible', disableHostKeyChecking: true, installation: 'ansible', inventory: '/etc/ansible/hosts', playbook: 'ansible-playbook.yml', sudoUser: null, vaultTmpPath: ''
+                echo 'Pushing Docker image to DockerHub...'
+                sh "docker push $DOCKER_IMAGE"
+            }
+        }
+
+        stage('Deploy Using Ansible') {
+            steps {
+                echo 'Deploying application using Ansible playbook...'
+                ansiblePlaybook become: true, 
+                                credentialsId: 'ansible', 
+                                disableHostKeyChecking: true, 
+                                installation: 'ansible', 
+                                inventory: '/etc/ansible/hosts', 
+                                playbook: 'ansible-playbook.yml'
             }
         }
     }
