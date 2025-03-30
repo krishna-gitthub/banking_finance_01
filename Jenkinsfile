@@ -6,14 +6,14 @@ pipeline {
     }
 
     environment {
-        DOCKER_IMAGE = 'pradeep781/bankingproject:latest'
+        DOCKER_IMAGE = 'krishna131099/bankingproject:latest'
     }
 
     stages {
         stage('Checkout Code') {
             steps {
                 echo 'Cloning repository from GitHub...'
-                git url: 'https://github.com/Pradeep-kumar11/banking_finance'
+                git url: 'https://github.com/krishna-gitthub/banking_finance_01'
             }
         }
 
